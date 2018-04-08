@@ -1,0 +1,164 @@
+version: '2'
+
+networks:
+  mjmall:
+
+services:
+
+  zookeeper0:
+    image: hyperledger/fabric-zookeeper
+    restart: always
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=zookeeper0:2888:3888 server.2=zookeeper1:2888:3888 server.3=zookeeper2:2888:3888
+    ports:
+      - '2181'
+      - '2888'
+      - '3888'
+    networks:
+      - mjmall
+
+  zookeeper1:
+    image: hyperledger/fabric-zookeeper
+    restart: always
+    environment:
+      - ZOO_MY_ID=2
+      - ZOO_SERVERS=server.1=zookeeper0:2888:3888 server.2=zookeeper1:2888:3888 server.3=zookeeper2:2888:3888
+    ports:
+      - '2181'
+      - '2888'
+      - '3888'
+    networks:
+      - mjmall
+
+
+  zookeeper2:
+    image: hyperledger/fabric-zookeeper
+    restart: always
+    environment:
+      - ZOO_MY_ID=3
+      - ZOO_SERVERS=server.1=zookeeper0:2888:3888 server.2=zookeeper1:2888:3888 server.3=zookeeper2:2888:3888
+    ports:
+      - '2181'
+      - '2888'
+      - '3888'
+    networks:
+      - mjmall
+
+  kafka0:
+    image: hyperledger/fabric-kafka
+    restart: always
+    environment:
+      - KAFKA_BORKER_ID=0
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper0:2181,zookeeper1:2181,zookeeper2:2181
+      - KAFKA_MESSAGE_MAX_BYTES=103809024 # 99 * 1024 *1024 B
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_UNCLEAN_LEADER_LECTION_ENABLE=false
+    ports:
+      - '19092:9092'
+    depends_on:
+      - zookeeper0
+      - zookeeper1
+      - zookeeper2
+    networks:
+      - mjmall
+
+
+  kafka1:
+    image: hyperledger/fabric-kafka
+    restart: always
+    environment:
+      - KAFKA_BORKER_ID=1
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper0:2181,zookeeper1:2181,zookeeper2:2181
+      - KAFKA_MESSAGE_MAX_BYTES=103809024 # 99 * 1024 *1024 B
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_UNCLEAN_LEADER_LECTION_ENABLE=false
+    ports:
+      - '19093:9092'
+    depends_on:
+      - zookeeper0
+      - zookeeper1
+      - zookeeper2
+    networks:
+      - mjmall
+
+
+  kafka2:
+    image: hyperledger/fabric-kafka
+    restart: always
+    environment:
+      - KAFKA_BORKER_ID=2
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper0:2181,zookeeper1:2181,zookeeper2:2181
+      - KAFKA_MESSAGE_MAX_BYTES=103809024 # 99 * 1024 *1024 B
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_UNCLEAN_LEADER_LECTION_ENABLE=false
+    ports:
+      - '19094:9092'
+    depends_on:
+      - zookeeper0
+      - zookeeper1
+      - zookeeper2
+    networks:
+      - mjmall
+
+
+  kafka3:
+    image: hyperledger/fabric-kafka
+    restart: always
+    environment:
+      - KAFKA_BORKER_ID=3
+      - KAFKA_MIN_INSYNC_REPLICAS=2
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper0:2181,zookeeper1:2181,zookeeper2:2181
+      - KAFKA_MESSAGE_MAX_BYTES=103809024 # 99 * 1024 *1024 B
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=103809024
+      - KAFKA_UNCLEAN_LEADER_LECTION_ENABLE=false
+    ports:
+      - '19095:9092'
+    depends_on:
+      - zookeeper0
+      - zookeeper1
+      - zookeeper2
+    networks:
+      - mjmall
+
+  orderer0:
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_KAFKA_RETRY_SHORTINTERVAL=1s
+      - ORDERER_KAFKA_RETRY_SHORTTOTAL=30s
+      - ORDERER_KAFKA_VERBOSE=true
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/artifacts/genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=MjmallMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+    volumes:
+      - ./channel-artifacts:/var/hyperledger/orderer/artifacts
+      - ./crypto-config/ordererOrganizations/mjmall.com/orderers/orderer.mjmall.com/msp:/var/hyperledger/orderer/msp
+      - ./crypto-config/ordererOrganizations/mjmall.com/orderers/orderer.mjmall.com/tls:/var/hyperledger/orderer/tls
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+    command: orderer
+    ports:
+      - '7050:7050'
+    depends_on:
+      - zookeeper0
+      - zookeeper1
+      - zookeeper2
+      - kafka0
+      - kafka1
+      - kafka2
+      - kafka3
+    networks:
+      - mjmall
